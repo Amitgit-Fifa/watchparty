@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>KickOff — Watch Party Host</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c232c; --line:#2a323c;
+    --txt:#e6edf3; --dim:#8b949e; --green:#2ea043; --yellow:#d29922;
+    --red:#da3633; --accent:#f0883e; --blue:#388bfd; --purple:#a371f7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{background:#000; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:var(--txt);}
+  #root{display:flex; justify-content:center;}
+  .phone{width:100%; max-width:430px; min-height:100vh; background:var(--bg); position:relative; overflow:hidden; display:flex; flex-direction:column;}
+  .scroll{flex:1; overflow-y:auto; padding:16px 16px 96px; -webkit-overflow-scrolling:touch;}
+  .topbar{padding:14px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); background:var(--panel);}
+  .brand{font-weight:800; font-size:20px; letter-spacing:-.5px;}
+  .brand span{color:var(--accent);}
+  .sub{color:var(--dim); font-size:12px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px;}
+  .card2{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
+  h2{font-size:15px; text-transform:uppercase; letter-spacing:1px; color:var(--dim); margin-bottom:10px;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .btn{background:var(--accent); color:#0d1117; border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:700; width:100%; cursor:pointer;}
+  .btn:active{opacity:.8;}
+  .btn.ghost{background:transparent; color:var(--txt); border:1px solid var(--line);}
+  .btn.blue{background:var(--blue); color:#fff;}
+  .btn.green{background:var(--green); color:#fff;}
+  .btn.sm{padding:9px 12px; font-size:13px; width:auto; border-radius:10px;}
+  input,select{width:100%; background:var(--bg); border:1px solid var(--line); color:var(--txt); padding:12px; border-radius:10px; font-size:15px; outline:none;}
+  input:focus,select:focus{border-color:var(--accent);}
+  label{font-size:12px; color:var(--dim); display:block; margin:12px 0 6px;}
+  .pill{font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-block;}
+  .p-green{background:rgba(46,160,67,.18); color:#3fb950;}
+  .p-yellow{background:rgba(210,153,34,.18); color:#e3b341;}
+  .p-red{background:rgba(218,54,51,.18); color:#f85149;}
+  .p-blue{background:rgba(56,139,253,.18); color:#79c0ff;}
+  .p-purple{background:rgba(163,113,247,.18); color:#d2a8ff;}
+  .tabbar{position:sticky; bottom:0; display:flex; background:var(--panel); border-top:1px solid var(--line);}
+  .tab{flex:1; text-align:center; padding:10px 0 14px; font-size:10px; color:var(--dim); cursor:pointer;}
+  .tab.on{color:var(--accent);}
+  .tab .ic{font-size:20px; display:block; margin-bottom:2px;}
+  .match{background:linear-gradient(135deg,#1c232c,#0d1117); border:1px solid var(--line); border-radius:16px; padding:18px; text-align:center;}
+  .teams{display:flex; align-items:center; justify-content:center; gap:14px; font-size:30px;}
+  .vs{color:var(--dim); font-size:14px; font-weight:700;}
+  .tname{font-size:12px; color:var(--dim); margin-top:6px;}
+  .stat{flex:1; text-align:center;}
+  .stat b{font-size:22px; display:block;}
+  .stat span{font-size:11px; color:var(--dim);}
+  .avatar{width:34px; height:34px; border-radius:50%; background:var(--panel2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; border:1px solid var(--line); flex-shrink:0;}
+  .listrow{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .listrow:last-child{border-bottom:none;}
+  .grow{flex:1; min-width:0;}
+  .name{font-weight:600; font-size:14px;}
+  .muted{color:var(--dim); font-size:12px;}
+  .linkbox{background:var(--bg); border:1px dashed var(--accent); border-radius:10px; padding:12px; font-size:12px; color:#79c0ff; word-break:break-all;}
+  .emoji-pick{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0;}
+  .em{font-size:26px; padding:6px; border-radius:10px; cursor:pointer; border:1px solid transparent;}
+  .em.on{border-color:var(--accent); background:var(--panel2);}
+  .bubble{background:var(--panel2); border-radius:14px; padding:10px 12px; display:inline-block; max-width:80%;}
+  .center{text-align:center;}
+  .big{font-size:46px;}
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  .sheet{width:100%; max-width:430px; background:var(--panel); border-radius:20px 20px 0 0; padding:20px; max-height:85vh; overflow-y:auto;}
+  .seg{display:flex; background:var(--bg); border-radius:12px; padding:4px; gap:4px; margin:8px 0;}
+  .seg div{flex:1; text-align:center; padding:9px; border-radius:9px; font-size:13px; font-weight:600; color:var(--dim); cursor:pointer;}
+  .seg div.on{background:var(--accent); color:#0d1117;}
+  .free{font-size:11px; color:var(--green); font-weight:700;}
+  .lock{filter:grayscale(1) brightness(.6); pointer-events:none; position:relative;}
+  .gap{height:8px;}
+  .divider{height:1px; background:var(--line); margin:14px 0;}
+  .tag-inperson{color:#3fb950;}
+  .tag-remote{color:#79c0ff;}
+  .fab{position:fixed; bottom:78px; right:calc(50% - 215px + 16px); background:var(--accent); color:#0d1117; width:54px; height:54px; border-radius:50%; font-size:28px; display:flex; align-items:center; justify-content:center; border:none; box-shadow:0 4px 14px rgba(240,136,62,.4); cursor:pointer; z-index:20;}
+  @media(max-width:430px){.fab{right:16px;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect} = React;
+
+/* ---------- persistence ---------- */
+const KEY = "kickoff_v1";
+const load = () => { try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null} };
+const save = (s) => localStorage.setItem(KEY, JSON.stringify(s));
+
+const MATCHES = [
+  {id:"m1", a:"🇺🇸", b:"🇲🇽", an:"USA", bn:"Mexico", comp:"Group Stage", when:"Sat Jun 13, 3:00 PM"},
+  {id:"m2", a:"🇧🇷", b:"🇦🇷", an:"Brazil", bn:"Argentina", comp:"Quarter-final", when:"Sun Jun 14, 12:00 PM"},
+  {id:"m3", a:"🏴", b:"🇫🇷", an:"England", bn:"France", comp:"Semi-final", when:"Wed Jun 17, 2:00 PM"},
+  {id:"m4", a:"🇪🇸", b:"🇩🇪", an:"Spain", bn:"Germany", comp:"Final", when:"Sun Jul 19, 11:00 AM"},
+];
+const PRICE = 7.99;
+
+const seedParty = (host, match) => ({
+  id: "p" + Date.now(),
+  host,
+  match,
+  paid: false,
+  createdAt: Date.now(),
+  link: "kickoff.app/j/" + Math.random().toString(36).slice(2,8),
+  guests: [
+    {id:1, name:host, rsvp:"in", food:"Hosting 🏠", you:true},
+  ],
+  preds: {},   // guestId -> "2-1"
+  vibe: [],    // {id,name,emoji,text,t}
+});
+
+/* ---------- root ---------- */
+function App(){
+  const [state,setState] = useState(()=> load() || {parties:[], me:"Alex"});
+  useEffect(()=>save(state),[state]);
+  const [view,setView] = useState({screen:"home"}); // home | create | party | history | invite
+
+  const upd = (fn)=> setState(s=>{ const n=structuredClone(s); fn(n); return n; });
+
+  const active = state.parties.find(p=>p.id===view.id);
+
+  return (
+    <div className="phone">
+      {view.screen==="home" && <Home state={state} go={setView}/>}
+      {view.screen==="history" && <History state={state} go={setView}/>}
+      {view.screen==="create" && <Create state={state} upd={upd} go={setView}/>}
+      {view.screen==="invite" && active && <InvitePreview p={active} upd={upd} go={setView} me={state.me}/>}
+      {view.screen==="party" && active && <Party p={active} upd={upd} go={setView} me={state.me}/>}
+      {(view.screen==="home"||view.screen==="history") &&
+        <TabBar view={view} go={setView}/>}
+      {(view.screen==="home"||view.screen==="history") &&
+        <button className="fab" onClick={()=>go(setView,"create")}>＋</button>}
+    </div>
+  );
+}
+const go=(set,screen,id)=>set({screen,id});
+
+/* ---------- HOME ---------- */
+function Home({state,go}){
+  const upcoming = state.parties.filter(p=>p.paid).sort((a,b)=>b.createdAt-a.createdAt);
+  const drafts = state.parties.filter(p=>!p.paid);
+  return (<>
+    <div className="topbar">
+      <div><div className="brand">Kick<span>Off</span></div><div className="sub">Host. Invite. Watch together.</div></div>
+      <div className="avatar">{state.me[0]}</div>
+    </div>
+    <div className="scroll">
+      {drafts.length>0 && <>
+        <h2>Awaiting payment</h2>
+        {drafts.map(p=> <DraftRow key={p.id} p={p} go={go}/>)}
+      </>}
+      <h2>Your watch parties</h2>
+      {upcoming.length===0 && <div className="card center"><div className="big">⚽</div><p className="muted">No parties yet. Tap ＋ to host one.</p></div>}
+      {upcoming.map(p=> <PartyRow key={p.id} p={p} go={go}/>)}
+    </div>
+  </>);
+}
+function DraftRow({p,go}){
+  return (
+    <div className="card" onClick={()=>go({screen:"create"})}>
+      <div className="row">
+        <div className="grow"><div className="name">{p.match.an} vs {p.match.bn}</div><div className="muted">{p.match.when}</div></div>
+        <span className="pill p-yellow">Pay to share</span>
+      </div>
+    </div>
+  );
+}
+function PartyRow({p,go}){
+  const att = p.guests.filter(g=>g.rsvp==="in"||g.rsvp==="remote").length;
+  return (
+    <div className="card" onClick={()=>go({screen:"party",id:p.id})}>
+      <div className="row">
+        <div style={{fontSize:26}}>{p.match.a} {p.match.b}</div>
+        <span className="pill p-green">Live access</span>
+      </div>
+      <div className="name" style={{marginTop:8}}>{p.match.an} vs {p.match.bn}</div>
+      <div className="muted">{p.match.when} · {att} going</div>
+    </div>
+  );
+}
+
+/* ---------- HISTORY ---------- */
+function History({state,go}){
+  const past = [...state.parties].filter(p=>p.paid).sort((a,b)=>b.createdAt-a.createdAt);
+  return (<>
+    <div className="topbar"><div className="brand">History</div><div className="sub">{past.length} parties</div></div>
+    <div className="scroll">
+      {past.length===0 && <div className="card center"><p className="muted">Your past parties will live here forever.</p></div>}
+      {past.map(p=>{
+        const att=p.guests.filter(g=>g.rsvp!=="out").length;
+        return (
+        <div className="card" key={p.id} onClick={()=>go({screen:"party",id:p.id})}>
+          <div className="row">
+            <div className="grow"><div className="name">{p.match.a} {p.match.b} · {p.match.an} vs {p.match.bn}</div>
+            <div className="muted">{p.match.when}</div></div>
+            <span style={{fontSize:22}}>›</span>
+          </div>
+          <div className="divider"/>
+          <div className="row">
+            <div className="stat"><b>{att}</b><span>attended</span></div>
+            <div className="stat"><b>{Object.keys(p.preds).length}</b><span>predictions</span></div>
+            <div className="stat"><b>{p.vibe.length}</b><span>reactions</span></div>
+          </div>
+        </div>);
+      })}
+    </div>
+  </>);
+}
+
+/* ---------- CREATE + PAY ---------- */
+function Create({state,upd,go}){
+  const [matchId,setMatchId]=useState(MATCHES[0].id);
+  const [step,setStep]=useState("pick"); // pick | pay | done
+  const [draftId,setDraftId]=useState(null);
+  const match = MATCHES.find(m=>m.id===matchId);
+
+  const createDraft=()=>{
+    const party=seedParty(state.me,match);
+    setDraftId(party.id);
+    upd(s=>s.parties.push(party));
+    setStep("pay");
+  };
+  const pay=()=>{
+    upd(s=>{const p=s.parties.find(x=>x.id===draftId); p.paid=true;});
+    setStep("done");
+  };
+  const party = state.parties.find(p=>p.id===draftId);
+
+  return (<>
+    <div className="topbar">
+      <div className="brand" onClick={()=>go({screen:"home"})}>‹ Host a party</div>
+    </div>
+    <div className="scroll">
+      {step==="pick" && <>
+        <div className="match">
+          <div className="teams">{match.a}<span className="vs">VS</span>{match.b}</div>
+          <div className="tname">{match.an} vs {match.bn} · {match.comp}</div>
+          <div className="muted" style={{marginTop:6}}>{match.when}</div>
+        </div>
+        <label>Pick the match</label>
+        <select value={matchId} onChange={e=>setMatchId(e.target.value)}>
+          {MATCHES.map(m=><option key={m.id} value={m.id}>{m.an} vs {m.bn} — {m.comp}</option>)}
+        </select>
+        <div className="card2" style={{marginTop:16}}>
+          <div className="row"><b>Per-game host fee</b><b>${PRICE.toFixed(2)}</b></div>
+          <p className="muted" style={{marginTop:6}}>You pay once for this game. Then your invite link unlocks the full app — free for everyone you invite, in person or remote.</p>
+        </div>
+        <button className="btn" onClick={createDraft}>Continue to payment</button>
+      </>}
+
+      {step==="pay" && <>
+        <div className="card center">
+          <div className="big">💳</div>
+          <div className="name">{match.an} vs {match.bn}</div>
+          <div className="muted">{match.when}</div>
+        </div>
+        <div className="card">
+          <h2>Host fee — one game</h2>
+          <label>Card number</label><input placeholder="4242 4242 4242 4242"/>
+          <div className="row" style={{gap:10}}>
+            <div className="grow"><label>Expiry</label><input placeholder="06/27"/></div>
+            <div className="grow"><label>CVC</label><input placeholder="123"/></div>
+          </div>
+          <div className="divider"/>
+          <div className="row"><span className="muted">Total due today</span><b style={{fontSize:20}}>${PRICE.toFixed(2)}</b></div>
+        </div>
+        <button className="btn green" onClick={pay}>Pay ${PRICE.toFixed(2)} & unlock invite</button>
+        <p className="muted center" style={{marginTop:10}}>Demo — no real charge.</p>
+      </>}
+
+      {step==="done" && party && <>
+        <div className="card center">
+          <div className="big">✅</div>
+          <div className="name">You're all set!</div>
+          <p className="muted">Full app unlocked for {party.match.an} vs {party.match.bn}.</p>
+        </div>
+        <div className="card">
+          <h2>Share your invite link</h2>
+          <div className="linkbox">{party.link}</div>
+          <div className="gap"/>
+          <button className="btn blue" onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(party.link)}>Copy link</button>
+          <div className="gap"/>
+          <button className="btn ghost" onClick={()=>go({screen:"invite",id:party.id})}>Preview what guests see</button>
+          <p className="muted" style={{marginTop:10}}>Friends tap this link, say if they're coming in person or watching remotely, and pick what to bring. The app is free for them.</p>
+        </div>
+        <button className="btn" onClick={()=>go({screen:"party",id:party.id})}>Open party →</button>
+      </>}
+    </div>
+  </>);
+}
+
+/* ---------- INVITE PREVIEW (guest-facing) ---------- */
+function InvitePreview({p,upd,go,me}){
+  const [name,setName]=useState("");
+  const [rsvp,setRsvp]=useState("in");
+  const [food,setFood]=useState("");
+  const [done,setDone]=useState(false);
+  const join=()=>{
+    if(!name.trim())return;
+    upd(s=>{const party=s.parties.find(x=>x.id===p.id);
+      party.guests.push({id:Date.now(), name:name.trim(), rsvp, food:food.trim()||(rsvp==="remote"?"Watching remotely 📺":"")});});
+    setDone(true);
+  };
+  return (<>
+    <div className="topbar"><div className="brand" onClick={()=>go({screen:"party",id:p.id})}>‹ Invite preview</div><span className="free">FREE FOR GUESTS</span></div>
+    <div className="scroll">
+      <div className="match">
+        <p className="muted" style={{marginBottom:8}}>{p.host} invited you to a watch party</p>
+        <div className="teams">{p.match.a}<span className="vs">VS</span>{p.match.b}</div>
+        <div className="tname">{p.match.an} vs {p.match.bn}</div>
+        <div className="muted" style={{marginTop:6}}>{p.match.when}</div>
+      </div>
+      {!done ? <div className="card">
+        <h2>Will you join?</h2>
+        <label>Your name</label>
+        <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Sam"/>
+        <label>How are you watching?</label>
+        <div className="seg">
+          <div className={rsvp==="in"?"on":""} onClick={()=>setRsvp("in")}>🏠 In person</div>
+          <div className={rsvp==="remote"?"on":""} onClick={()=>setRsvp("remote")}>📺 Remote</div>
+          <div className={rsvp==="out"?"on":""} onClick={()=>setRsvp("out")}>🙁 Can't</div>
+        </div>
+        {rsvp==="in" && <><label>What will you bring? (food / drinks)</label>
+          <input value={food} onChange={e=>setFood(e.target.value)} placeholder="e.g. Nachos & salsa"/></>}
+        {rsvp==="remote" && <p className="muted">You'll join the live vibe chat & bracket from home — synced with everyone at the party.</p>}
+        <div className="gap"/>
+        <button className="btn" onClick={join}>{rsvp==="out"?"Send response":"Join the party"}</button>
+      </div> :
+      <div className="card center">
+        <div className="big">🎉</div>
+        <div className="name">You're {rsvp==="out"?"marked as out":"in!"}</div>
+        <p className="muted">{rsvp==="remote"?"Download the app to join remotely.":rsvp==="in"?"See you there. Download the app for the bracket & live vibe.":"Maybe next match!"}</p>
+        <div className="gap"/>
+        <button className="btn ghost" onClick={()=>go({screen:"party",id:p.id})}>Back to host view</button>
+      </div>}
+    </div>
+  </>);
+}
+
+/* ---------- PARTY (5 tabs) ---------- */
+function Party({p,upd,go,me}){
+  const [tab,setTab]=useState("party");
+  return (<>
+    <div className="topbar">
+      <div className="brand" onClick={()=>go({screen:"home"})}>‹ {p.match.an} v {p.match.bn}</div>
+      <span className="pill p-green">Unlocked</span>
+    </div>
+    {tab==="party" && <PartyTab p={p} go={go}/>}
+    {tab==="crew" && <CrewTab p={p} upd={upd}/>}
+    {tab==="food" && <FoodTab p={p} upd={upd}/>}
+    {tab==="bracket" && <BracketTab p={p} upd={upd} me={me}/>}
+    {tab==="vibe" && <VibeTab p={p} upd={upd} me={me}/>}
+    <div className="tabbar">
+      {[["party","⚽","Party"],["crew","👥","Crew"],["food","🍕","Food"],["bracket","🏆","Bracket"],["vibe","🔥","Vibe"]].map(([k,i,l])=>
+        <div key={k} className={"tab"+(tab===k?" on":"")} onClick={()=>setTab(k)}><span className="ic">{i}</span>{l}</div>)}
+    </div>
+  </>);
+}
+
+function PartyTab({p,go}){
+  const inP=p.guests.filter(g=>g.rsvp==="in").length;
+  const rem=p.guests.filter(g=>g.rsvp==="remote").length;
+  const food=p.guests.filter(g=>g.rsvp==="in"&&g.food).length;
+  return (<div className="scroll">
+    <div className="match">
+      <div className="teams">{p.match.a}<span className="vs">VS</span>{p.match.b}</div>
+      <div className="tname">{p.match.comp}</div>
+      <div className="muted" style={{marginTop:6}}>⏰ {p.match.when}</div>
+    </div>
+    <div className="card"><div className="row">
+      <div className="stat tag-inperson"><b>{inP}</b><span>in person</span></div>
+      <div className="stat tag-remote"><b>{rem}</b><span>remote</span></div>
+      <div className="stat"><b>{Object.keys(p.preds).length}</b><span>predictions</span></div>
+      <div className="stat"><b>{food}</b><span>bringing food</span></div>
+    </div></div>
+    <div className="card">
+      <h2>Invite link</h2>
+      <div className="linkbox">{p.link}</div>
+      <div className="gap"/>
+      <div className="row" style={{gap:10}}>
+        <button className="btn blue sm" style={{flex:1}} onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(p.link)}>Copy</button>
+        <button className="btn ghost sm" style={{flex:1}} onClick={()=>go({screen:"invite",id:p.id})}>Preview</button>
+      </div>
+      <p className="muted" style={{marginTop:10}}>Free for everyone you invite — whether they show up or watch from home.</p>
+    </div>
+  </div>);
+}
+
+function CrewTab({p,upd}){
+  const [name,setName]=useState("");
+  const [rsvp,setRsvp]=useState("in");
+  const add=()=>{ if(!name.trim())return;
+    upd(s=>{const party=s.parties.find(x=>x.id===p.id);
+      party.guests.push({id:Date.now(),name:name.trim(),rsvp,food:rsvp==="remote"?"Watching remotely 📺":""});});
+    setName("");
+  };
+  const tag=(r)=> r==="in"?<span className="pill p-green">🏠 In person</span>: r==="remote"?<span className="pill p-blue">📺 Remote</span>:<span className="pill p-red">Can't make it</span>;
+  return (<div className="scroll">
+    <div className="card">
+      <h2>The crew ({p.guests.length})</h2>
+      {p.guests.map(g=>(
+        <div className="listrow" key={g.id}>
+          <div className="avatar">{g.name[0]}</div>
+          <div className="grow"><div className="name">{g.name}{g.you?" (you)":""}</div><div className="muted">{g.food||"—"}</div></div>
+          {tag(g.rsvp)}
+        </div>
+      ))}
+    </div>
+    <div className="card">
+      <h2>Add someone</h2>
+      <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name"/>
+      <div className="seg">
+        <div className={rsvp==="in"?"on":""} onClick={()=>setRsvp("in")}>🏠 In person</div>
+        <div className={rsvp==="remote"?"on":""} onClick={()=>setRsvp("remote")}>📺 Remote</div>
+        <div className={rsvp==="out"?"on":""} onClick={()=>setRsvp("out")}>Can't</div>
+      </div>
+      <button className="btn sm" style={{width:"100%"}} onClick={add}>Add to crew</button>
+    </div>
+  </div>);
+}
+
+function FoodTab({p,upd}){
+  const inPpl=p.guests.filter(g=>g.rsvp==="in");
+  const setFood=(id,v)=>upd(s=>{const party=s.parties.find(x=>x.id===p.id);
+    const g=party.guests.find(x=>x.id===id); g.food=v;});
+  return (<div className="scroll">
+    <div className="card">
+      <h2>Who's bringing what</h2>
+      {inPpl.length===0 && <p className="muted">No in-person guests yet.</p>}
+      {inPpl.map(g=>(
+        <div className="listrow" key={g.id}>
+          <div className="avatar">{g.name[0]}</div>
+          <div className="grow">
+            <div className="name">{g.name}</div>
+            <input style={{marginTop:4,padding:8,fontSize:13}} value={g.food} onChange={e=>setFood(g.id,e.target.value)} placeholder="Bringing…"/>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="card">
+      <h2>Group order</h2>
+      <button className="btn sm" style={{width:"100%",background:"#ff3008",color:"#fff",marginBottom:8}}>🛵 DoorDash group order</button>
+      <button className="btn sm" style={{width:"100%",background:"#06c167",color:"#fff"}}>🍔 Uber Eats group order</button>
+      <div className="divider"/>
+      <h2>Split the cost</h2>
+      <div className="row" style={{gap:8}}>
+        <button className="btn ghost sm" style={{flex:1}}>Venmo</button>
+        <button className="btn ghost sm" style={{flex:1}}>PayPal</button>
+        <button className="btn ghost sm" style={{flex:1}}>Cash App</button>
+      </div>
+    </div>
+  </div>);
+}
+
+function BracketTab({p,upd,me}){
+  const [score,setScore]=useState("");
+  const myGuest=p.guests.find(g=>g.you)||p.guests[0];
+  const lock=()=>{ if(!/^\d+-\d+$/.test(score.trim()))return;
+    upd(s=>{const party=s.parties.find(x=>x.id===p.id); party.preds[myGuest.id]=score.trim();});
+    setScore("");
+  };
+  return (<div className="scroll">
+    <div className="match">
+      <div className="teams">{p.match.a}<span className="vs">VS</span>{p.match.b}</div>
+      <div className="tname">Predict the final score</div>
+    </div>
+    <div className="card">
+      <h2>Lock your prediction</h2>
+      <p className="muted" style={{marginBottom:8}}>Your pick {p.preds[myGuest.id]?`is ${p.preds[myGuest.id]}`:"is open"}.</p>
+      <input value={score} onChange={e=>setScore(e.target.value)} placeholder="e.g. 2-1"/>
+      <div className="gap"/>
+      <button className="btn sm" style={{width:"100%"}} onClick={lock}>Lock it in 🔒</button>
+    </div>
+    <div className="card">
+      <h2>The pool</h2>
+      {p.guests.filter(g=>p.preds[g.id]).length===0 && <p className="muted">No predictions yet.</p>}
+      {p.guests.filter(g=>p.preds[g.id]).map(g=>(
+        <div className="listrow" key={g.id}>
+          <div className="avatar">{g.name[0]}</div>
+          <div className="grow"><div className="name">{g.name}</div>
+            <div className="muted">{g.rsvp==="remote"?"📺 remote":"🏠 in person"}</div></div>
+          <b style={{fontSize:18}}>{p.preds[g.id]}</b>
+        </div>
+      ))}
+      <div className="divider"/>
+      <p className="muted">Exact score = 3 pts · correct result = 1 pt. Auto-scored after full time.</p>
+    </div>
+  </div>);
+}
+
+function VibeTab({p,upd,me}){
+  const [emoji,setEmoji]=useState("🔥");
+  const [text,setText]=useState("");
+  const EMS=["🔥","⚽","😱","😂","💀","🙌","🥶","🤬"];
+  const send=()=>{ if(!text.trim()&&!emoji)return;
+    upd(s=>{const party=s.parties.find(x=>x.id===p.id);
+      party.vibe.unshift({id:Date.now(),name:me,emoji,text:text.trim(),t:Date.now()});});
+    setText("");
+  };
+  return (<div className="scroll">
+    <div className="card2 center">
+      <p className="muted">🔴 Live vibe — everyone in person <b>and</b> remote sees this in real time.</p>
+    </div>
+    {p.vibe.length===0 && <div className="card center"><div className="big">🔥</div><p className="muted">No reactions yet. Start the hype.</p></div>}
+    {p.vibe.map(v=>(
+      <div className="listrow" key={v.id} style={{alignItems:"flex-start"}}>
+        <div className="avatar">{v.name[0]}</div>
+        <div className="grow">
+          <div className="name">{v.name} <span style={{fontSize:18}}>{v.emoji}</span></div>
+          {v.text && <div className="bubble" style={{marginTop:4}}>{v.text}</div>}
+        </div>
+      </div>
+    ))}
+    <div style={{position:"sticky",bottom:0,background:"var(--bg)",paddingTop:8}}>
+      <div className="emoji-pick">
+        {EMS.map(e=><span key={e} className={"em"+(emoji===e?" on":"")} onClick={()=>setEmoji(e)}>{e}</span>)}
+      </div>
+      <div className="row" style={{gap:8}}>
+        <input value={text} onChange={e=>setText(e.target.value)} placeholder="Hot take…" onKeyDown={e=>e.key==="Enter"&&send()}/>
+        <button className="btn sm" onClick={send}>Send</button>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ---------- bottom nav for home/history ---------- */
+function TabBar({view,go}){
+  return (
+    <div className="tabbar">
+      <div className={"tab"+(view.screen==="home"?" on":"")} onClick={()=>go({screen:"home"})}><span className="ic">🏠</span>Parties</div>
+      <div className={"tab"+(view.screen==="history"?" on":"")} onClick={()=>go({screen:"history"})}><span className="ic">🕘</span>History</div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
